@@ -1,6 +1,10 @@
-# Virtual Scroll for Angular Material Table
+# Virtual Scroll for Angular CDK Table
 
 An Angular Directive, which allow to use [virtual scrolling](https://material.angular.io/cdk/scrolling) in [mat-table](https://material.angular.io/components/table)
+
+⚠️ This is a fork from https://github.com/diprokon/ng-table-virtual-scroll
+That implements the changes from https://github.com/rosostolato/ng-table-virtual-scroll
+making it compatible with Angular 15+ and Angular Material 15+
 
 [![Demo](https://img.shields.io/badge/demo-online-ed1c46.svg)](https://diprokon.github.io/ng-table-virtual-scroll)
 [![npm](https://img.shields.io/npm/v/ng-table-virtual-scroll.svg?maxAge=2592000?style=plastic)](https://www.npmjs.com/package/ng-table-virtual-scroll)
@@ -22,7 +26,7 @@ An Angular Directive, which allow to use [virtual scrolling](https://material.an
 **NPM**
 
 ```bash
-$ npm install -save ng-table-virtual-scroll
+$ npm install -save @dimkel/ng-cdk-table-virtual-scroll
 ```
 
 _**Version compatibility**_
@@ -41,7 +45,7 @@ _**Version compatibility**_
 ### Import `TableVirtualScrollModule`
 
 ```ts
-import { TableVirtualScrollModule } from 'ng-table-virtual-scroll';
+import { TableVirtualScrollModule } from '@dimkel/ng-cdk-table-virtual-scroll';
 
 @NgModule({
   imports: [
@@ -63,7 +67,7 @@ used as the data source for the `mat-table` (`CdkTableVirtualScrollDataSource` f
 **Note: without `TableVirtualScrollDataSource` the directive won't work**
 
 ```ts
-import { TableVirtualScrollDataSource } from 'ng-table-virtual-scroll';
+import { TableVirtualScrollDataSource } from '@dimkel/ng-cdk-table-virtual-scroll';
 
 @Component({...})
 export class MyComponent {

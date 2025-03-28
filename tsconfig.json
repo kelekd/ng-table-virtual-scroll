@@ -19,8 +19,11 @@
       "dom"
     ],
     "paths": {
-      "ng-table-virtual-scroll": [
+      "@dimkel/ng-cdk-table-virtual-scroll": [
         "projects/ng-table-virtual-scroll/src/public-api.ts"
+      ],
+      "ng-table-virtual-scroll": [
+        "projects/ng-table-virtual-scroll/src/public-api.ts",
       ]
     },
     "useDefineForClassFields": false

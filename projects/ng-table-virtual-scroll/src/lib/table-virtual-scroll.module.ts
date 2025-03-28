@@ -3,7 +3,9 @@ import { TableItemSizeDirective } from './table-item-size.directive';
 
 
 @NgModule({
-  declarations: [TableItemSizeDirective],
+  declarations: [
+    TableItemSizeDirective,
+  ],
   imports: [],
   exports: [TableItemSizeDirective]
 })

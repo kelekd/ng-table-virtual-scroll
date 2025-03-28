@@ -1,18 +1,18 @@
 {
-  "name": "ng-table-virtual-scroll",
-  "version": "1.6.1",
-  "description": "Virtual scroll for for Angular Material Table",
-  "homepage": "https://github.com/diprokon/ng-table-virtual-scroll",
+  "name": "@dimkel/ng-cdk-table-virtual-scroll",
+  "version": "1.0.4",
+  "description": "Virtual scroll for for Angular Cdk Table",
+  "homepage": "https://github.com/kelekd/ng-table-virtual-scroll",
   "author": {
     "name": "Dmytro Prokhorov",
     "url": "https://github.com/diprokon"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/diprokon/ng-table-virtual-scroll.git"
+    "url": "git://github.com/kelekd/ng-table-virtual-scroll.git"
   },
   "bugs": {
-    "url": "https://github.com/diprokon/ng-table-virtual-scroll/issues"
+    "url": "https://github.com/kelekd/ng-table-virtual-scroll/issues"
   },
   "keywords": [
     "angular",
@@ -35,7 +35,7 @@
     "e2e": "cypress open --component -b chrome",
     "e2e:ci": "cypress run --component --config-file cypress.config.ts"
   },
-  "private": true,
+  "private": false,
   "dependencies": {
     "@angular/animations": "^15.1.4",
     "@angular/cdk": "^15.1.4",

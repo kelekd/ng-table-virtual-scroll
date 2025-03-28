@@ -10,11 +10,10 @@ import {
   OnChanges,
   OnDestroy
 } from '@angular/core';
-import { MatTable } from '@angular/material/table';
 import { combineLatest, from, Subject } from 'rxjs';
-import { delayWhen, distinctUntilChanged, map, startWith, switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { delayWhen, distinctUntilChanged, startWith, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { FixedSizeTableVirtualScrollStrategy } from './fixed-size-table-virtual-scroll-strategy';
-import { CdkTableVirtualScrollDataSource, isTVSDataSource, TableVirtualScrollDataSource } from './table-data-source';
+import { TableVirtualScrollDataSource } from './table-data-source';
 
 export function _tableVirtualScrollDirectiveStrategyFactory(tableDir: TableItemSizeDirective) {
   return tableDir.scrollStrategy;
@@ -35,14 +34,6 @@ const stickyFooterSelector = combineSelectors(
   ['.mat-footer-row', '.mat-table-sticky'],
   ['.cdk-footer-row', '.cdk-table-sticky']
 );
-
-function isMatTable<T>(table: unknown): table is MatTable<T> {
-  return table instanceof CdkTable && table['stickyCssClass'].includes('mat');
-}
-
-function isCdkTable<T>(table: unknown): table is CdkTable<T> {
-  return table instanceof CdkTable && table['stickyCssClass'].includes('cdk');
-}
 
 const defaults = {
   rowHeight: 48,
@@ -82,6 +73,9 @@ export class TableItemSizeDirective<T = unknown> implements OnChanges, AfterCont
 
   @Input()
   bufferMultiplier: string | number = defaults.bufferMultiplier;
+
+  @Input()
+  visibleRowsCount?: number;
 
   @ContentChild(CdkTable, { static: false })
   table: CdkTable<T>;
@@ -152,42 +146,29 @@ export class TableItemSizeDirective<T = unknown> implements OnChanges, AfterCont
 
   connectDataSource(dataSource: unknown) {
     this.dataSourceChanges.next();
-    if (!isTVSDataSource(dataSource)) {
-      throw new Error('[tvsItemSize] requires TableVirtualScrollDataSource or CdkTableVirtualScrollDataSource be set as [dataSource] of the table');
-    }
-    if (isMatTable(this.table) && !(dataSource instanceof TableVirtualScrollDataSource)) {
-      throw new Error('[tvsItemSize] requires TableVirtualScrollDataSource be set as [dataSource] of [mat-table]');
-    }
-    if (isCdkTable(this.table) && !(dataSource instanceof CdkTableVirtualScrollDataSource)) {
-      throw new Error('[tvsItemSize] requires CdkTableVirtualScrollDataSource be set as [dataSource] of [cdk-table]');
-    }
-
-    dataSource
-      .dataToRender$
-      .pipe(
-        distinctUntilChanged(),
-        takeUntil(this.dataSourceChanges),
-        takeUntil(this.destroyed$),
-        tap(data => this.scrollStrategy.dataLength = data.length),
-        switchMap(data =>
-          this.scrollStrategy
-            .renderedRangeStream
-            .pipe(
-              map(({
-                     start,
-                     end
-                   }) => typeof start !== 'number' || typeof end !== 'number' ? data : data.slice(start, end))
-            )
+    if (dataSource instanceof TableVirtualScrollDataSource) {
+      const tvsDataSource = dataSource as TableVirtualScrollDataSource<T>;
+      tvsDataSource.dataToRender$
+        .pipe(
+          distinctUntilChanged(),
+          takeUntil(this.dataSourceChanges),
+          takeUntil(this.destroyed$),
+          tap(data => this.scrollStrategy.dataLength = data.length),
+          switchMap(() => this.scrollStrategy.renderedRangeStream),
+          takeUntil(this.destroyed$)
         )
-      )
-      .subscribe(data => {
-        this.zone.run(() => {
-          dataSource.dataOfRange$.next(data);
+        .subscribe(({ start, end }) => {
+          const data = tvsDataSource.data.slice(start, end);
+          tvsDataSource.dataOfRange$.next(data);
         });
-      });
+    } else {
+      throw new Error('[tvsItemSize] requires TableVirtualScrollDataSource be set as [dataSource] of [cdk-table]');
+    }
   }
 
   ngOnChanges() {
+    const viewportHeight = this.visibleRowsCount ? this.visibleRowsCount * (+this.rowHeight || defaults.rowHeight) : undefined;
+
     const config = {
       rowHeight: +this.rowHeight || defaults.rowHeight,
       headerHeight: this.headerEnabled ? +this.headerHeight || defaults.headerHeight : 0,
@@ -195,6 +176,11 @@ export class TableItemSizeDirective<T = unknown> implements OnChanges, AfterCont
       bufferMultiplier: +this.bufferMultiplier || defaults.bufferMultiplier
     };
     this.scrollStrategy.setConfig(config);
+
+    if (viewportHeight && this.scrollStrategy.viewport) {
+      this.scrollStrategy.viewport.elementRef.nativeElement.style.height = `${viewportHeight}px`;
+      this.scrollStrategy.viewport.checkViewportSize();
+    }
   }
 
   private setStickyEnabled(): boolean {
