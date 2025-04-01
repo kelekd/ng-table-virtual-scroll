@@ -1,8 +1,4 @@
-import { BehaviorSubject, combineLatest, merge, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatSort, Sort } from '@angular/material/sort';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { BehaviorSubject, Observable, ReplaySubject, Subject, Subscription } from 'rxjs';
 import { DataSource } from '@angular/cdk/collections';
 
 export interface TVSDataSource<T> {
@@ -84,52 +80,41 @@ export class CdkTableVirtualScrollDataSource<T> extends DataSource<T> implements
   }
 }
 
-export class TableVirtualScrollDataSource<T> extends MatTableDataSource<T> implements TVSDataSource<T> {
-  public dataToRender$: Subject<T[]>;
-  public dataOfRange$: Subject<T[]>;
-  private streamsReady: boolean;
+export class TableVirtualScrollDataSource<T> extends DataSource<T> implements TVSDataSource<T> {
+  private readonly _dataSubject = new BehaviorSubject<T[]>([]);
+  private readonly _renderData = new BehaviorSubject<T[]>([]);
+  private readonly _renderChangesSubscription = new Subscription();
 
-  _updateChangeSubscription() {
-    this.initStreams();
-    const _sort: MatSort | null = this['_sort'];
-    const _paginator: MatPaginator | null = this['_paginator'];
-    const _internalPageChanges: Subject<void> = this['_internalPageChanges'];
-    const _filter: BehaviorSubject<string> = this['_filter'];
-    const _renderData: BehaviorSubject<T[]> = this['_renderData'];
+  public dataToRender$ = new ReplaySubject<T[]>(1);
+  public dataOfRange$ = new ReplaySubject<T[]>(1);
 
-    const sortChange: Observable<Sort | null | void> = _sort ?
-      merge(_sort.sortChange, _sort.initialized) as Observable<Sort | void> :
-      of(null);
-    const pageChange: Observable<PageEvent | null | void> = _paginator ?
-      merge(
-        _paginator.page,
-        _internalPageChanges,
-        _paginator.initialized
-      ) as Observable<PageEvent | void> :
-      of(null);
-    const dataStream: Observable<T[]> = this['_data'];
-    const filteredData = combineLatest([dataStream, _filter])
-      .pipe(map(([data]) => this._filterData(data)));
-    const orderedData = combineLatest([filteredData, sortChange])
-      .pipe(map(([data]) => this._orderData(data)));
-    const paginatedData = combineLatest([orderedData, pageChange])
-      .pipe(map(([data]) => this._pageData(data)));
+  get data(): T[] {
+    return this._dataSubject.value;
+  }
 
-    this._renderChangesSubscription?.unsubscribe();
-    this._renderChangesSubscription = new Subscription();
+  set data(data: T[]) {
+    this._dataSubject.next(data);
+  }
+
+  constructor(initialData: T[] = []) {
+    super();
+    this._dataSubject.next(initialData);
     this._renderChangesSubscription.add(
-      paginatedData.subscribe(data => this.dataToRender$.next(data))
+      this._dataSubject.subscribe(data => this.dataToRender$.next(data))
     );
     this._renderChangesSubscription.add(
-      this.dataOfRange$.subscribe(data => _renderData.next(data))
+      this.dataOfRange$.subscribe(data => this._renderData.next(data))
     );
   }
 
-  private initStreams() {
-    if (!this.streamsReady) {
-      this.dataToRender$ = new ReplaySubject<T[]>(1);
-      this.dataOfRange$ = new ReplaySubject<T[]>(1);
-      this.streamsReady = true;
-    }
+  connect(): Observable<T[]> {
+    return this._renderData.asObservable();
+  }
+
+  disconnect(): void {
+    this._dataSubject.complete();
+    this.dataToRender$.complete();
+    this.dataOfRange$.complete();
+    this._renderChangesSubscription.unsubscribe();
   }
 }
